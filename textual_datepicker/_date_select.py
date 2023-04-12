@@ -30,7 +30,7 @@ class DatePickerDialog(Widget):
 
     # The DatePicker mounted in this dialog.
     date_picker = None
-    size = Size(26, 15)
+    size = Size(30, 17)
 
     # A target where to send the message for a selected date
     target = None
@@ -161,6 +161,12 @@ class DatePickerDialogScreen(ModalScreen):
     def on_resize(self) -> None:
         self.dialog.offset = (
             (self.app.size[0] - self.dialog.size[0])//2, (self.app.size[1] - self.dialog.size[1])//2)
+
+    def on_click(self, event: events.MouseEvent) -> None:
+        # Remove the datepicker screen if the user clicks outside of it:
+        if not (self.dialog.offset[0] <= event.screen_x < self.dialog.offset[0] + self.dialog.size[0]) \
+                or not (self.dialog.offset[1] <= event.screen_y < self.dialog.offset[1] + self.dialog.size[1]):
+            self.app.pop_screen()
 
     def on_mount(self) -> None:
         # TODO: should be dynamic for smaller inputs
