@@ -30,7 +30,6 @@ class DateSelectApp(App):
             DateSelect(
                 placeholder="please select",
                 format="YYYY-MM-DD",
-                picker_mount="#main_container",
                 # date=pendulum.parse("2023-02-14")
             ),
 
