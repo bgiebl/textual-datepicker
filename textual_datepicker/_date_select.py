@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import pendulum
 
-from textual.app import ComposeResult
+from textual.app import ComposeResult, App
 from textual.widget import Widget, events
-from textual.containers import Vertical
+from textual.containers import Vertical, Container
 from textual.reactive import reactive
 from textual.css.query import NoMatches
+from textual.screen import ModalScreen
+from textual.geometry import Size
 
 # from textual import log
 
@@ -23,15 +25,17 @@ class DatePickerDialog(Widget):
         width: 30;
         height: 17;
         border: tall $accent;
-        display: none;
     }
     """
 
     # The DatePicker mounted in this dialog.
     date_picker = None
+    size = Size(26, 15)
 
     # A target where to send the message for a selected date
     target = None
+    def __init__(self):
+        super().__init__()
 
     def compose(self) -> ComposeResult:
         self.date_picker = DatePicker()
@@ -44,9 +48,11 @@ class DatePickerDialog(Widget):
 
     def on_date_picker_selected(self, event: DatePicker.Selected) -> None:
         self.display = False
+        self.app.pop_screen()
 
         if self.target is not None:
             self.target.focus()
+
 
 
 class DateSelect(Widget, can_focus=True):
@@ -122,7 +128,9 @@ class DateSelect(Widget, can_focus=True):
         if self.dialog is None:
             self.dialog = DatePickerDialog()
             self.dialog.target = self
-            self.app.query_one(self.picker_mount).mount(self.dialog)
+
+        mnt_widget = self.app.query_one(self.picker_mount)
+        self.app.install_screen(DatePickerDialogScreen(self.dialog, mnt_widget, self), name="date_picker_dialog_screen")
 
     def on_key(self, event: events.Key) -> None:
         if event.key == "enter":
@@ -138,16 +146,31 @@ class DateSelect(Widget, can_focus=True):
         self.date = event.date
 
     def _show_date_picker(self) -> None:
-        mnt_widget = self.app.query_one(self.picker_mount)
         self.dialog.display = True
+        self.app.push_screen("date_picker_dialog_screen")
 
-        # calculate offset of DateSelect and apply it to DatePickerDialog
-        self.dialog.offset = self.region.offset - mnt_widget.content_region.offset
 
-        # move down 3 (height of input)
+class DatePickerDialogScreen(ModalScreen):
+    BINDINGS = [("escape", "app.pop_screen()", "Pop screen")]
+
+    def __init__(self, date_picker_dialog, mnt_widget, parent_widget):
+        super().__init__()
+        self.date = None
+        self.dialog = date_picker_dialog
+        self.mnt_widget = mnt_widget
+        self.parent_widget = parent_widget
+
+    def compose(self) -> ComposeResult:
+        yield self.dialog
+
+    def on_resize(self) -> None:
+        self.dialog.offset = (
+            (self.app.size[0] - self.dialog.size[0])//2, (self.app.size[1] - self.dialog.size[1])//2)
+
+    def on_mount(self) -> None:
         # TODO: should be dynamic for smaller inputs
         self.dialog.offset = (
-            self.dialog.offset.x, self.dialog.offset.y + 3)
+            (self.app.size[0] - self.dialog.size[0])//2, (self.app.size[1] - self.dialog.size[1])//2)
 
         if self.date is not None:
             if self.date is not None:
