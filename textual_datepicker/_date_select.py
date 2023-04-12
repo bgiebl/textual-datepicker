@@ -80,7 +80,6 @@ class DateSelect(Widget, can_focus=True):
 
     def __init__(
         self,
-        picker_mount: str,
         date: pendulum.DateTime | None = None,
         format: str = "YYYY-MM-DD",
         placeholder: str = "",
@@ -89,7 +88,6 @@ class DateSelect(Widget, can_focus=True):
         classes: str | None = None,
     ) -> None:
         super().__init__(name=name, id=id, classes=classes)
-        self.picker_mount = picker_mount
         self.placeholder = placeholder
         self.format = format
 
@@ -129,8 +127,7 @@ class DateSelect(Widget, can_focus=True):
             self.dialog = DatePickerDialog()
             self.dialog.target = self
 
-        mnt_widget = self.app.query_one(self.picker_mount)
-        self.app.install_screen(DatePickerDialogScreen(self.dialog, mnt_widget, self), name="date_picker_dialog_screen")
+        self.app.install_screen(DatePickerDialogScreen(self.dialog), name="date_picker_dialog_screen")
 
     def on_key(self, event: events.Key) -> None:
         if event.key == "enter":
@@ -153,12 +150,10 @@ class DateSelect(Widget, can_focus=True):
 class DatePickerDialogScreen(ModalScreen):
     BINDINGS = [("escape", "app.pop_screen()", "Pop screen")]
 
-    def __init__(self, date_picker_dialog, mnt_widget, parent_widget):
+    def __init__(self, date_picker_dialog):
         super().__init__()
         self.date = None
         self.dialog = date_picker_dialog
-        self.mnt_widget = mnt_widget
-        self.parent_widget = parent_widget
 
     def compose(self) -> ComposeResult:
         yield self.dialog
